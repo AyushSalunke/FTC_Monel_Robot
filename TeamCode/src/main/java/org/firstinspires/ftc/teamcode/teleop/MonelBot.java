@@ -62,6 +62,7 @@ public class MonelBot extends LinearOpMode {
             Intake.intakeWristServo.setPosition(0.65);
             Drone.initialPos();
             Hanger.hangerServo.setPosition(0.3);
+            Intake.gripperServo.setPosition(1);
         }
 
         waitForStart();
@@ -86,155 +87,152 @@ public class MonelBot extends LinearOpMode {
 //            drive.update();
 //            telemetry.addData("heading", poseEstimate.getHeading());
             //--------------------------------------------------------------------------------------
-
-            //Slider
-            if (currentGamepad1.dpad_up && !previousGamepad1.dpad_up) {
-                telemetry.addLine("DPad_UP_Pressed");
-                Slider.IncreaseExtension(levelTwo);
-            }
-            if (currentGamepad1.dpad_down && !previousGamepad1.dpad_down) {
-                telemetry.addLine("DPad_DOWN_Pressed");
-                Slider.DecreaseExtension(levelOne);
-            }
+//
+//            //Slider
+//            if (currentGamepad1.dpad_up && !previousGamepad1.dpad_up) {
+//                telemetry.addLine("DPad_UP_Pressed");
+//                Slider.IncreaseExtension(levelTwo);
+//            }
+//            if (currentGamepad1.dpad_down && !previousGamepad1.dpad_down) {
+//                telemetry.addLine("DPad_DOWN_Pressed");
+//                Slider.DecreaseExtension(levelOne);
+//            }
 
             telemetry.addData("SliderMotorOne tick count", Slider.sliderMotorOne.getCurrentPosition());
             telemetry.addData("SliderMotorTwo tick count", Slider.sliderMotorTwo.getCurrentPosition());
             telemetry.addData("SliderMotorOne Current", Slider.sliderMotorOne.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("SliderMotorTwo Current", Slider.sliderMotorTwo.getCurrent(CurrentUnit.AMPS));
             //--------------------------------------------------------------------------------------
-
-            //Arm
-            if (currentGamepad1.dpad_right && !previousGamepad1.dpad_right){
-                //Place Pixel
-                armServoPos = 0.5;
-                wristServoPos = 0.1;
-                Arm.SetArmPosition(armServoPos,wristServoPos);
-            }
-            if(currentGamepad1.dpad_left && !previousGamepad1.dpad_left) {
-                //Pick Pixel
-                armServoPos = 0.15;
-                wristServoPos = 0.73;
-                Arm.SetArmPosition(armServoPos, wristServoPos);
-            }
-            if (currentGamepad2.back && !previousGamepad2.back){
-                Arm.SetArmPosition(armServoPos, wristServoPos);
-            }
+//
+//            //Arm
+//            if (currentGamepad1.dpad_right && !previousGamepad1.dpad_right){
+//                //Place Pixel
+//                armServoPos = 0.5;
+//                wristServoPos = 0.1;
+//                Arm.SetArmPosition(armServoPos,wristServoPos);
+//            }
+//            if(currentGamepad1.dpad_left && !previousGamepad1.dpad_left) {
+//                //Pick Pixel
+//                armServoPos = 0.15;
+//                wristServoPos = 0.73;
+//                Arm.SetArmPosition(armServoPos, wristServoPos);
+//            }
+//            if (currentGamepad2.back && !previousGamepad2.back){
+//                Arm.SetArmPosition(armServoPos, wristServoPos);
+//            }
             //--------------------------------------------------
-
-            //Delivery
-            if(currentGamepad1.a && !previousGamepad1.a){
-                deliveryServoPos = 1;
-                Arm.DropPixel(deliveryServoPos);
-            }
-            if (currentGamepad1.b && !previousGamepad1.b){
-                deliveryServoPos = 0.45;
-                Arm.DropPixel(deliveryServoPos);
-                sleep(200);
-                Arm.armServo.setPosition(0);
-                slider.extendTo(-5, 1);
-                sleep(200);
-                slider.extendTo(0, 1);
-            }
+//
+//            //Delivery
+//            if(currentGamepad1.a && !previousGamepad1.a){
+//                deliveryServoPos = 1;
+//                Arm.DropPixel(deliveryServoPos);
+//            }
+//            if (currentGamepad1.b && !previousGamepad1.b){
+//                deliveryServoPos = 0.45;
+//                Arm.DropPixel(deliveryServoPos);
+//                sleep(200);
+//                Arm.armServo.setPosition(0);
+//                slider.extendTo(-5, 1);
+//                sleep(200);
+//                slider.extendTo(0, 1);
+//            }
             //--------------------------------------------------------------------------------------
-
-            //Hanger
-            if (currentGamepad1.right_bumper){
-                Hanger.LiftRobot();
-            }
-            if (currentGamepad1.left_bumper){
-                Hanger.PutDownRobot();
-            }
+//
+//            //Hanger
+//            if (currentGamepad1.right_bumper){
+//                Hanger.LiftRobot();
+//            }
+//            if (currentGamepad1.left_bumper){
+//                Hanger.PutDownRobot();
+//            }
             telemetry.addData("HangerMotor tick count", Hanger.hangerMotor.getCurrentPosition());
             telemetry.addData("Hanger Current", Hanger.hangerMotor.getCurrent(CurrentUnit.AMPS));
             //--------------------------------------------------------------------------------------
+//
+//            //Intake
+//            if (currentGamepad1.y && !previousGamepad1.y){
+//                //Intake Pixel Position
+//
+//                TrajectorySequence PickBottomPixel = drive.trajectorySequenceBuilder(startPose)
+//
+//                        .addTemporalMarker(()->{Intake.gripperServo.setPosition(0.75);})
+//                        .waitSeconds(0.3)
+//                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);})//Intake.intakeArmServo.setPosition(0.4);I
+//                        .waitSeconds(0.2)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
+//                        .waitSeconds(0.5)//0.6
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);Intake.gripperServo.setPosition(0.75);})
+//                        .build();
+//                TrajectorySequence PickMiddlePixel = drive.trajectorySequenceBuilder(startPose)
+//                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);})
+//                        .waitSeconds(0.2)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
+//                        .waitSeconds(0.5)//0.6
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);})
+//                        .build();
+//                TrajectorySequence PickTopPixel = drive.trajectorySequenceBuilder(startPose)
+//                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);Intake.intakeArmServo.setPosition(0.55);})
+//                        .waitSeconds(0.4)//0.2
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
+//                        .waitSeconds(0.5)//0.5//0.6
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.44);Intake.crankServo.setPosition(0.7);})
+//                        .build();
+//                drive.followTrajectorySequence(PickBottomPixel);
+//            }
 
-            //Intake
-            if (currentGamepad1.y && !previousGamepad1.y){
-                //Intake Pixel Position
-
-                TrajectorySequence PickBottomPixel = drive.trajectorySequenceBuilder(startPose)
-
-                        .addTemporalMarker(()->{Intake.gripperServo.setPosition(0.75);})
-                        .waitSeconds(0.3)
-                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);})//Intake.intakeArmServo.setPosition(0.4);I
-                        .waitSeconds(0.2)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
-                        .waitSeconds(0.5)//0.6
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);Intake.gripperServo.setPosition(0.75);})
-                        .build();
-                TrajectorySequence PickMiddlePixel = drive.trajectorySequenceBuilder(startPose)
-                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);})
-                        .waitSeconds(0.2)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
-                        .waitSeconds(0.5)//0.6
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);})
-                        .build();
-                TrajectorySequence PickTopPixel = drive.trajectorySequenceBuilder(startPose)
-                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.65);Intake.intakeArmServo.setPosition(0.55);})
-                        .waitSeconds(0.4)//0.2
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);})
-                        .waitSeconds(0.5)//0.5//0.6
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.44);Intake.crankServo.setPosition(0.7);})
-                        .build();
-                drive.followTrajectorySequence(PickBottomPixel);
-            }
-
-            if(currentGamepad1.x && !previousGamepad1.x) {
-                //Pick Pixel from ground Position
-
-                TrajectorySequence IntakeBottomPixel = drive.trajectorySequenceBuilder(startPose)
-                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.4);})
-                        .addTemporalMarker(()->{Intake.IntakePixel(1);})
-                        .waitSeconds(0.05)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
-                        .waitSeconds(0.5)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.4);})//Intake.intakeWristServo.setPosition(0.65);
-                        .waitSeconds(0.2)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.45);})
-                        .build();
-
-                TrajectorySequence IntakeTopPixel = drive.trajectorySequenceBuilder(startPose)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
-                        .waitSeconds(0.5)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.62);})//Intake.intakeWristServo.setPosition(0.65);
-                        .waitSeconds(0.2)
-                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.62);Intake.intakeWristServo.setPosition(0.258);})
-                        .build();
-                drive.followTrajectorySequence(IntakeBottomPixel);
-            }
+//            if(currentGamepad1.x && !previousGamepad1.x) {
+//                //Pick Pixel from ground Position
+//
+//                TrajectorySequence IntakeBottomPixel = drive.trajectorySequenceBuilder(startPose)
+//                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.4);})
+//                        .addTemporalMarker(()->{Intake.IntakePixel(1);})
+//                        .waitSeconds(0.05)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
+//                        .waitSeconds(0.5)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.4);})//Intake.intakeWristServo.setPosition(0.65);
+//                        .waitSeconds(0.2)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.45);})
+//                        .build();
+//
+//                TrajectorySequence IntakeTopPixel = drive.trajectorySequenceBuilder(startPose)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
+//                        .waitSeconds(0.5)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.62);})//Intake.intakeWristServo.setPosition(0.65);
+//                        .waitSeconds(0.2)
+//                        .addTemporalMarker(()->{Intake.intakeArmServo.setPosition(0.62);Intake.intakeWristServo.setPosition(0.258);})
+//                        .build();
+//                drive.followTrajectorySequence(IntakeBottomPixel);
+//            }
             if (currentGamepad2.start && !previousGamepad2.start){
                 Intake.SetArmPosition(intakeArmServoPos, intakeWristServoPos);
             }
             //--------------------------------------------------------------------------------------
 
-            //Gripper
-//            if (currentGamepad1.start && !previousGamepad1.start){
-//                intakeToggle = !intakeToggle;
-//            }
-//            if (intakeToggle){
-//                gripperServoPos = 0.75;
-////                Intake.IntakePixel(gripperServoPos);
-//            }
-//            else {
-//                gripperServoPos = 1;
-////                Intake.IntakePixel(gripperServoPos);
-//            }
+//            Gripper
+            if (currentGamepad1.x && !previousGamepad1.x){
+                gripperServoPos = 0.75;
+                Intake.IntakePixel(gripperServoPos);
+            }
+            if (currentGamepad1.b && !previousGamepad1.b){
+                gripperServoPos = 1;
+                Intake.IntakePixel(gripperServoPos);
+            }
             //-----------------------------------------------------
 
-            //Crank
-            if (currentGamepad1.back && !previousGamepad1.back){
-                crankToggle = !crankToggle;
-            }
-            if (crankToggle){
-                telemetry.addLine("Crank Extended");
-                crankServoPos = 0.38;
-                Intake.CrankPosition(crankServoPos);
-            }
-            else {
-                telemetry.addLine("Crank Retracted");
-                crankServoPos = 0.67;
-                Intake.CrankPosition(crankServoPos);
-            }
+//            //Crank
+//            if (currentGamepad1.back && !previousGamepad1.back){
+//                crankToggle = !crankToggle;
+//            }
+//            if (crankToggle){
+//                telemetry.addLine("Crank Extended");
+//                crankServoPos = 0.38;
+//                Intake.CrankPosition(crankServoPos);
+//            }
+//            else {
+//                telemetry.addLine("Crank Retracted");
+//                crankServoPos = 0.67;
+//                Intake.CrankPosition(crankServoPos);
+//            }
             //--------------------------------------------------------------------------------------
 
             //Final TeleOp
@@ -325,7 +323,6 @@ public class MonelBot extends LinearOpMode {
                 Drone.shootDrone();
             }
             if (currentGamepad2.dpad_right){
-
                 Hanger.LiftRobot();
             }
             if (currentGamepad2.dpad_left){
@@ -342,13 +339,16 @@ public class MonelBot extends LinearOpMode {
                 HEADING = 1;
                 TURN = 1;
             }
-            if (currentGamepad2.left_trigger > 0.5){
+            if (currentGamepad2.left_trigger > 0.5 && !(previousGamepad2.left_trigger > 0.3)){
                 crankToggle = !crankToggle;
             }
             if (crankToggle){
                 telemetry.addLine("Crank Extended");
                 crankServoPos = 0.38;
                 Intake.CrankPosition(crankServoPos);
+                Intake.intakeArmServo.setPosition(0.4);
+                Intake.intakeWristServo.setPosition(0.5);
+
             }
             else {
                 telemetry.addLine("Crank Retracted");
