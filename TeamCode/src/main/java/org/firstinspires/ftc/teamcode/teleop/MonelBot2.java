@@ -34,8 +34,8 @@ public class MonelBot2 extends LinearOpMode {
 
     public static double THROTTLE = 1, HEADING = 1, TURN = 1;
     public static double
-            armServoPos=0.63, wristServoPos=0.28, deliveryServoPos=0.5;
-    public static double levelOne = 0, levelTwo = 300, levelThree = 450;
+            armServoPos, wristServoPos, deliveryServoPos;
+    public static double levelZero = 0, levelOne = 300;
     public static double
             gripperServoPos, intakeArmServoPos, intakeWristServoPos, crankServoPos, position2, position;
     boolean
@@ -95,10 +95,10 @@ public class MonelBot2 extends LinearOpMode {
 
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1);
-//            previousGamepad2.copy(currentGamepad2);
+            previousGamepad2.copy(currentGamepad2);
 
             currentGamepad1.copy(gamepad1);
-//            currentGamepad2.copy(gamepad2);
+            currentGamepad2.copy(gamepad2);
 
             // Main teleop loop goes here
 
@@ -216,12 +216,10 @@ public class MonelBot2 extends LinearOpMode {
                 drive.update();
             }
             if (currentGamepad1.dpad_up && !previousGamepad1.dpad_up) {
-                telemetry.addLine("DPad_UP_Pressed");
-                Slider.IncreaseExtension(levelTwo);
+                Slider.IncreaseExtension(levelOne);
             }
             if (currentGamepad1.dpad_down && !previousGamepad1.dpad_down) {
-                telemetry.addLine("DPad_DOWN_Pressed");
-                Slider.DecreaseExtension(levelOne);
+                Slider.DecreaseExtension(levelZero);
             }
             if (currentGamepad1.y && !previousGamepad1.y){
                 Hanger.ExtendHanger();
@@ -245,6 +243,21 @@ public class MonelBot2 extends LinearOpMode {
                 THROTTLE = 1;
                 HEADING = 1;
                 TURN = 1;
+            }
+
+            if (currentGamepad2.dpad_up && !previousGamepad2.dpad_up){
+                levelOne += 50;
+            }
+            if(currentGamepad2.dpad_down && !previousGamepad2.dpad_down){
+                levelOne -= 50;
+            }
+            if (currentGamepad2.left_bumper && !previousGamepad2.left_bumper){
+                gripperServoPos = 0.75;
+                Intake.IntakePixel(gripperServoPos);
+            }
+            if (currentGamepad2.right_bumper && !previousGamepad2.right_bumper){
+                gripperServoPos = 1;
+                Intake.IntakePixel(gripperServoPos);
             }
 
             telemetry.addData("Beam Breaker State:", beamBreaker.getState());
