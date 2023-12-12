@@ -19,6 +19,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Drone;
 import org.firstinspires.ftc.teamcode.subsystems.Hanger;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Slider;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
 @TeleOp(group = "Robot Main")
 @Config
@@ -68,13 +69,12 @@ public class MonelBot2 extends LinearOpMode {
 
         Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
         drive.setPoseEstimate(startPose);
+
         // Retrieve the IMU from the hardware map
         IMU imu = hardwareMap.get(IMU.class, "imu");
-        // Adjust the orientation parameters to match your robot
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
-        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
 
         DigitalChannel beamBreaker = hardwareMap.get(DigitalChannel.class, "beamBreaker");
@@ -95,10 +95,10 @@ public class MonelBot2 extends LinearOpMode {
 
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1);
-            previousGamepad2.copy(currentGamepad2);
+//            previousGamepad2.copy(currentGamepad2);
 
             currentGamepad1.copy(gamepad1);
-            currentGamepad2.copy(gamepad2);
+//            currentGamepad2.copy(gamepad2);
 
             // Main teleop loop goes here
 
@@ -117,7 +117,7 @@ public class MonelBot2 extends LinearOpMode {
             switch (inputState){
                 case INTAKE_START:
                     //waiting for input
-                    if(currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
+                    if(currentGamepad1.left_bumper && !previousGamepad1.left_bumper){
                         Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.45);
                         Intake.IntakePixel(1);
                         Arm.armServo.setPosition(0.3);Arm.wristServo.setPosition(0.735);
@@ -172,11 +172,82 @@ public class MonelBot2 extends LinearOpMode {
                             }
                         }
                     }
+                    break;
             }
             if(currentGamepad1.left_trigger > 0.3 && !(previousGamepad1.left_trigger>0.3) && inputState!=IntakeState.INTAKE_START){
                 inputState = IntakeState.INTAKE_START;
             }
 
+            if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
+                //outtake pixel and bring out pixel intake
+                TrajectorySequence OuttakePixel = drive.trajectorySequenceBuilder(startPose)
+                        .addTemporalMarker(()->{Intake.IntakePixel(1);})
+                        .addTemporalMarker(()->{Arm.DropPixel(0.45);})
+                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.4);})
+                        .waitSeconds(0.1)
+                        .UNSTABLE_addTemporalMarkerOffset(0.0,()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
+                        .UNSTABLE_addTemporalMarkerOffset(0.3,()->{Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.65);})
+                        .UNSTABLE_addTemporalMarkerOffset(0.5,()->{Intake.intakeArmServo.setPosition(0.5);Intake.intakeWristServo.setPosition(0.65);}) //arm->0.4 for grd
+                        .UNSTABLE_addTemporalMarkerOffset(0.2,()->{Arm.armServo.setPosition(0.5);Arm.wristServo.setPosition(0.1);})
+                        .waitSeconds(1)
+                        .build();
+
+                drive.followTrajectorySequenceAsync(OuttakePixel);
+                drive.update();
+            }
+
+            if(currentGamepad1.b && !previousGamepad1.b){
+                //drop 1st pixel
+                deliveryServoPos = 0.75;
+                Arm.DropPixel(deliveryServoPos);
+            }
+            if(currentGamepad1.a && !previousGamepad1.a){
+                //drop 2nd pixel
+                deliveryServoPos = 1;
+                Arm.DropPixel(deliveryServoPos);
+                TrajectorySequence DropPixel = drive.trajectorySequenceBuilder(startPose)
+                        .addTemporalMarker(()->{Arm.DropPixel(1);})
+                        .waitSeconds(0.2)
+                        .addTemporalMarker(()->{Arm.wristServo.setPosition(0.73);Arm.armServo.setPosition(0.15);})
+                        .addTemporalMarker(()->{Slider.DecreaseExtension(levelOne);})
+                        .waitSeconds(0.1)
+                        .build();
+                drive.followTrajectorySequenceAsync(DropPixel);
+                drive.update();
+            }
+            if (currentGamepad1.dpad_up && !previousGamepad1.dpad_up) {
+                telemetry.addLine("DPad_UP_Pressed");
+                Slider.IncreaseExtension(levelTwo);
+            }
+            if (currentGamepad1.dpad_down && !previousGamepad1.dpad_down) {
+                telemetry.addLine("DPad_DOWN_Pressed");
+                Slider.DecreaseExtension(levelOne);
+            }
+            if (currentGamepad1.y && !previousGamepad1.y){
+                Hanger.ExtendHanger();
+            }
+            if (currentGamepad1.x && !previousGamepad1.x){
+                Drone.shootDrone();
+            }
+            if (currentGamepad1.dpad_right){
+                Hanger.LiftRobot();
+            }
+            if (currentGamepad1.dpad_left){
+                Hanger.PutDownRobot();
+            }
+            if(currentGamepad1.right_trigger>0.5){
+                THROTTLE = 0.3;
+                HEADING = 0.3;
+                TURN = 0.3;
+//                driveToggle = !driveToggle;
+            }
+            else {
+                THROTTLE = 1;
+                HEADING = 1;
+                TURN = 1;
+            }
+
+            telemetry.addData("Beam Breaker State:", beamBreaker.getState());
             telemetry.addData("SliderMotorOne tick count", Slider.sliderMotorOne.getCurrentPosition());
             telemetry.addData("SliderMotorTwo tick count", Slider.sliderMotorTwo.getCurrentPosition());
             telemetry.addData("SliderMotorOne Current", Slider.sliderMotorOne.getCurrent(CurrentUnit.AMPS));
