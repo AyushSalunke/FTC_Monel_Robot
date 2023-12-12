@@ -30,7 +30,7 @@ public class MonelBot2 extends LinearOpMode {
     Hanger hanger = null;
     Intake intake = null;
     Drone drone = null;
-    ElapsedTime inputTimer;
+    ElapsedTime inputTimer, outputTimer;
 
     public static double THROTTLE = 1, HEADING = 1, TURN = 1;
     public static double
@@ -49,7 +49,15 @@ public class MonelBot2 extends LinearOpMode {
         INTAKE_INPUT,
         INTAKE_FINAL
     };
+    public enum OuttakeState{
+        OUTTAKE_START,
+        OUTTAKE_PUSH,
+        OUTTAKE_OPEN,
+        OUTTAKE_OUTPUT,
+        OUTTAKE_FINAL
+    };
     IntakeState inputState = IntakeState.INTAKE_START;
+    OuttakeState outputState = OuttakeState.OUTTAKE_START;
     @Override
     public void runOpMode() throws InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
@@ -66,6 +74,7 @@ public class MonelBot2 extends LinearOpMode {
         drone =new Drone(hardwareMap, telemetry);
 
         inputTimer = new ElapsedTime();
+        outputTimer = new ElapsedTime();
 
         Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
         drive.setPoseEstimate(startPose);
@@ -89,6 +98,7 @@ public class MonelBot2 extends LinearOpMode {
             Hanger.hangerServo.setPosition(0.3);
             Intake.gripperServo.setPosition(1);
             inputTimer.reset();
+            outputTimer.reset();
         }
 
         waitForStart();
@@ -118,7 +128,7 @@ public class MonelBot2 extends LinearOpMode {
                 case INTAKE_START:
                     //waiting for input
                     if(currentGamepad1.left_bumper && !previousGamepad1.left_bumper){
-                        Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.45);
+                        Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.5);
                         Intake.IntakePixel(1);
                         Arm.armServo.setPosition(0.3);Arm.wristServo.setPosition(0.735);
                         Arm.DropPixel(1);
@@ -127,20 +137,21 @@ public class MonelBot2 extends LinearOpMode {
                     }
                     break;
                 case INTAKE_EXTEND:
-                    Intake.CrankPosition(0.69);
+                    Intake.CrankPosition(0.38);
                     if (inputTimer.milliseconds() >= 200){
                         inputState = IntakeState.INTAKE_GRIP;
                     }
                     break;
                 case INTAKE_GRIP:
-                    if (beamBreaker.getState()){
+                    if (!beamBreaker.getState()){
+                        Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.45);
                         Intake.IntakePixel(0.75);
                         inputTimer.reset();
                         inputState = IntakeState.INTAKE_RETRACT;
                     }
                     break;
                 case INTAKE_RETRACT:
-                    Intake.CrankPosition(0.375);
+                    Intake.CrankPosition(0.69);
                     if (inputTimer.milliseconds() >= 300){
                         inputState = IntakeState.INTAKE_INPUT;
                         inputTimer.reset();
@@ -173,28 +184,89 @@ public class MonelBot2 extends LinearOpMode {
                         }
                     }
                     break;
+                default:
+                    inputState = IntakeState.INTAKE_START;
             }
-            if(currentGamepad1.left_trigger > 0.3 && !(previousGamepad1.left_trigger>0.3) && inputState!=IntakeState.INTAKE_START){
+
+            switch (outputState){
+                case OUTTAKE_START:
+                    //waiting for input
+                    if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
+                        outputState = OuttakeState.OUTTAKE_PUSH;
+                        outputTimer.reset();
+                    }
+                    break;
+                case OUTTAKE_PUSH:
+                    Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);
+                    Arm.wristServo.setPosition(0.735);Arm.armServo.setPosition(0.15);
+                    if (outputTimer.milliseconds() >= 200){
+                        Arm.DropPixel(0.45);
+                        Arm.armServo.setPosition(0);
+                        slider.extendTo(-10, 0.8);
+                        if (outputTimer.milliseconds() >= 400){
+                            slider.extendTo(0, 0.8);
+                            Arm.armServo.setPosition(0.15);
+                            outputTimer.reset();
+                            outputState = OuttakeState.OUTTAKE_OPEN;
+                        }
+                    }
+                    break;
+                case OUTTAKE_OPEN:
+                    Intake.IntakePixel(1);
+                    if (outputTimer.milliseconds() >= 100){
+                        Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);
+                        if(outputTimer.milliseconds() >= 400){
+                            Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.65);
+                            if (outputTimer.milliseconds() >= 600){
+                                Intake.intakeArmServo.setPosition(0.5);Intake.intakeWristServo.setPosition(0.65);
+                                outputTimer.reset();
+                                outputState = OuttakeState.OUTTAKE_OUTPUT;
+                            }
+                        }
+                    }
+                    break;
+                case OUTTAKE_OUTPUT:
+                    Arm.armServo.setPosition(0.5);Arm.wristServo.setPosition(0.1);
+                    if (outputTimer.milliseconds() >= 200){
+                        outputTimer.reset();
+                        outputState = OuttakeState.OUTTAKE_FINAL;
+                    }
+                    break;
+                case OUTTAKE_FINAL:
+                    Intake.crankServo.setPosition(0.7);
+                    Intake.intakeArmServo.setPosition(0.5);
+                    Intake.intakeWristServo.setPosition(0.65);
+                    if (outputTimer.milliseconds()>=100){
+                        outputTimer.reset();
+                        outputState = OuttakeState.OUTTAKE_START;
+                    }
+                    break;
+                default:
+                    outputState = OuttakeState.OUTTAKE_START;
+            }
+
+            if(currentGamepad1.left_trigger > 0.3 && !(previousGamepad1.left_trigger>0.3) && (inputState!=IntakeState.INTAKE_START || outputState!=OuttakeState.OUTTAKE_START)){
                 inputState = IntakeState.INTAKE_START;
+                outputState = OuttakeState.OUTTAKE_START;
             }
 
-            if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
-                //outtake pixel and bring out pixel intake
-                TrajectorySequence OuttakePixel = drive.trajectorySequenceBuilder(startPose)
-                        .addTemporalMarker(()->{Intake.IntakePixel(1);})
-                        .addTemporalMarker(()->{Arm.DropPixel(0.45);})
-                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.4);})
-                        .waitSeconds(0.1)
-                        .UNSTABLE_addTemporalMarkerOffset(0.0,()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
-                        .UNSTABLE_addTemporalMarkerOffset(0.3,()->{Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.65);})
-                        .UNSTABLE_addTemporalMarkerOffset(0.5,()->{Intake.intakeArmServo.setPosition(0.5);Intake.intakeWristServo.setPosition(0.65);}) //arm->0.4 for grd
-                        .UNSTABLE_addTemporalMarkerOffset(0.2,()->{Arm.armServo.setPosition(0.5);Arm.wristServo.setPosition(0.1);})
-                        .waitSeconds(1)
-                        .build();
-
-                drive.followTrajectorySequenceAsync(OuttakePixel);
-                drive.update();
-            }
+//            if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
+//                //outtake pixel and bring out pixel intake
+//                TrajectorySequence OuttakePixel = drive.trajectorySequenceBuilder(startPose)
+//                        .addTemporalMarker(()->{Intake.IntakePixel(1);})
+//                        .addTemporalMarker(()->{Arm.DropPixel(0.45);})
+//                        .addTemporalMarker(()->{Intake.intakeWristServo.setPosition(0.4);})
+//                        .waitSeconds(0.1)
+//                        .UNSTABLE_addTemporalMarkerOffset(0.0,()->{Intake.intakeArmServo.setPosition(0.7);Intake.intakeWristServo.setPosition(0.65);})
+//                        .UNSTABLE_addTemporalMarkerOffset(0.3,()->{Intake.intakeArmServo.setPosition(0.4);Intake.intakeWristServo.setPosition(0.65);})
+//                        .UNSTABLE_addTemporalMarkerOffset(0.5,()->{Intake.intakeArmServo.setPosition(0.5);Intake.intakeWristServo.setPosition(0.65);}) //arm->0.4 for grd
+//                        .UNSTABLE_addTemporalMarkerOffset(0.2,()->{Arm.armServo.setPosition(0.5);Arm.wristServo.setPosition(0.1);})
+//                        .waitSeconds(1)
+//                        .build();
+//
+//                drive.followTrajectorySequenceAsync(OuttakePixel);
+//                drive.update();
+//            }
 
             if(currentGamepad1.b && !previousGamepad1.b){
                 //drop 1st pixel
