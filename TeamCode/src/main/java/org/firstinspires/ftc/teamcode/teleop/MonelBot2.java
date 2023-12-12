@@ -140,14 +140,17 @@ public class MonelBot2 extends LinearOpMode {
                     Intake.CrankPosition(0.38);
                     if (inputTimer.milliseconds() >= 200){
                         inputState = IntakeState.INTAKE_GRIP;
+                        inputTimer.reset();
                     }
                     break;
                 case INTAKE_GRIP:
                     if (!beamBreaker.getState()){
                         Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.45);
-                        Intake.IntakePixel(0.75);
-                        inputTimer.reset();
-                        inputState = IntakeState.INTAKE_RETRACT;
+                        if(inputTimer.milliseconds()>=500){
+                            Intake.IntakePixel(0.75);
+                            inputTimer.reset();
+                            inputState = IntakeState.INTAKE_RETRACT;
+                        }
                     }
                     break;
                 case INTAKE_RETRACT:
@@ -158,11 +161,11 @@ public class MonelBot2 extends LinearOpMode {
                     }
                     break;
                 case INTAKE_INPUT:
-                    if (inputTimer.milliseconds() >= 100){
+                    if (inputTimer.milliseconds() >= 200){
                         Intake.intakeWristServo.setPosition(0.65);Intake.intakeArmServo.setPosition(0.4);
-                        if(inputTimer.milliseconds() >= 200){
+                        if(inputTimer.milliseconds() >= 500){
                             Intake.intakeArmServo.setPosition(0.7);
-                            if(inputTimer.milliseconds() >= 600){
+                            if(inputTimer.milliseconds() >= 800){
                                 Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);
                                 inputState = IntakeState.INTAKE_FINAL;
                                 inputTimer.reset();
@@ -281,7 +284,7 @@ public class MonelBot2 extends LinearOpMode {
                         .addTemporalMarker(()->{Arm.DropPixel(1);})
                         .waitSeconds(0.2)
                         .addTemporalMarker(()->{Arm.wristServo.setPosition(0.73);Arm.armServo.setPosition(0.15);})
-                        .addTemporalMarker(()->{Slider.DecreaseExtension(levelOne);})
+                        .addTemporalMarker(()->{Slider.DecreaseExtension(levelZero);})
                         .waitSeconds(0.1)
                         .build();
                 drive.followTrajectorySequenceAsync(DropPixel);
