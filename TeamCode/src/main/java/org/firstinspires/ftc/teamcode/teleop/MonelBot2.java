@@ -29,7 +29,7 @@ public class MonelBot2 extends LinearOpMode {
     Hanger hanger = null;
     Intake intake = null;
     Drone drone = null;
-    ElapsedTime timer = new ElapsedTime();
+    ElapsedTime inputTimer;
 
     public static double THROTTLE = 1, HEADING = 1, TURN = 1;
     public static double
@@ -40,13 +40,15 @@ public class MonelBot2 extends LinearOpMode {
     boolean
             armToggle = false, deliveryToggleOne = false, deliveryToggleTwo = false, intakeToggle = false, crankToggle = false, driveToggle = false;
 
-    public enum CrankState {
-        CRANK_START,
-        CRANK_EXTEND,
-        CRANK_GRIP,
-        CRANK_RETRACT
+    public enum IntakeState {
+        INTAKE_START,
+        INTAKE_EXTEND,
+        INTAKE_GRIP,
+        INTAKE_RETRACT,
+        INTAKE_INPUT,
+        INTAKE_FINAL
     };
-    CrankState crankState = CrankState.CRANK_START;
+    IntakeState inputState = IntakeState.INTAKE_START;
     @Override
     public void runOpMode() throws InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
@@ -62,7 +64,7 @@ public class MonelBot2 extends LinearOpMode {
         intake = new Intake(hardwareMap, telemetry);
         drone =new Drone(hardwareMap, telemetry);
 
-        timer = new ElapsedTime();
+        inputTimer = new ElapsedTime();
 
         Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
         drive.setPoseEstimate(startPose);
@@ -86,7 +88,7 @@ public class MonelBot2 extends LinearOpMode {
             Drone.initialPos();
             Hanger.hangerServo.setPosition(0.3);
             Intake.gripperServo.setPosition(1);
-            timer.reset();
+            inputTimer.reset();
         }
 
         waitForStart();
@@ -111,28 +113,68 @@ public class MonelBot2 extends LinearOpMode {
             drive.update();
             telemetry.addData("heading", poseEstimate.getHeading());
             //--------------------------------------------------------------------------------------
-            switch (crankState){
-                case CRANK_START:
-                    telemetry.addData("Crank State:", crankState);
-                    crankState = CrankState.CRANK_EXTEND;
+
+            switch (inputState){
+                case INTAKE_START:
+                    //waiting for input
+                    if(currentGamepad1.right_bumper && !previousGamepad1.right_bumper){
+                        Intake.intakeArmServo.setPosition(0.4); Intake.intakeWristServo.setPosition(0.45);
+                        Intake.IntakePixel(1);
+                        Arm.armServo.setPosition(0.3);Arm.wristServo.setPosition(0.735);
+                        Arm.DropPixel(1);
+                        inputTimer.reset();
+                        inputState = IntakeState.INTAKE_EXTEND;
+                    }
                     break;
-                case CRANK_EXTEND:
-                    telemetry.addData("Crank State:", crankState);
-                    crankState = CrankState.CRANK_GRIP;
+                case INTAKE_EXTEND:
+                    Intake.CrankPosition(0.69);
+                    if (inputTimer.milliseconds() >= 200){
+                        inputState = IntakeState.INTAKE_GRIP;
+                    }
                     break;
-                case CRANK_GRIP:
-                    telemetry.addData("Crank State:", crankState);
-                    crankState = CrankState.CRANK_RETRACT;
+                case INTAKE_GRIP:
+                    if (beamBreaker.getState()){
+                        Intake.IntakePixel(0.75);
+                        inputTimer.reset();
+                        inputState = IntakeState.INTAKE_RETRACT;
+                    }
                     break;
-                case CRANK_RETRACT:
-                    telemetry.addData("Crank State:", crankState);
-                    crankState = CrankState.CRANK_START;
+                case INTAKE_RETRACT:
+                    Intake.CrankPosition(0.375);
+                    if (inputTimer.milliseconds() >= 300){
+                        inputState = IntakeState.INTAKE_INPUT;
+                        inputTimer.reset();
+                    }
                     break;
-                default:
-                    telemetry.addData("Crank State:", "default");
+                case INTAKE_INPUT:
+                    if (inputTimer.milliseconds() >= 100){
+                        Intake.intakeWristServo.setPosition(0.65);Intake.intakeArmServo.setPosition(0.4);
+                        if(inputTimer.milliseconds() >= 200){
+                            Intake.intakeArmServo.setPosition(0.7);
+                            if(inputTimer.milliseconds() >= 600){
+                                Intake.intakeArmServo.setPosition(1);Intake.intakeWristServo.setPosition(0.45);Intake.crankServo.setPosition(0.7);
+                                inputState = IntakeState.INTAKE_FINAL;
+                                inputTimer.reset();
+                            }
+                        }
+                    }
+                    break;
+                case INTAKE_FINAL:
+                    if (inputTimer.milliseconds() >= 200){
+                        Arm.wristServo.setPosition(0.735);Arm.armServo.setPosition(0.15);
+                        if (inputTimer.milliseconds() >= 400){
+                            Arm.DropPixel(0.45);
+                            Arm.armServo.setPosition(0);
+                            slider.extendTo(-10, 0.8);
+                            if (inputTimer.milliseconds() >= 600){
+                                slider.extendTo(0, 0.8);Arm.armServo.setPosition(0.15);
+                                inputState = IntakeState.INTAKE_START;
+                            }
+                        }
+                    }
             }
-            if (currentGamepad1.left_trigger>0.3 && !(previousGamepad1.left_trigger>0.3) && crankState != CrankState.CRANK_START){
-                crankState = CrankState.CRANK_START;
+            if(currentGamepad1.left_trigger > 0.3 && !(previousGamepad1.left_trigger>0.3) && inputState!=IntakeState.INTAKE_START){
+                inputState = IntakeState.INTAKE_START;
             }
 
             telemetry.addData("SliderMotorOne tick count", Slider.sliderMotorOne.getCurrentPosition());
